@@ -7,8 +7,8 @@ import (
 	"testing"
 )
 
-const key = "46748412"
-const secret = "33b63be7b6b356ad6283be7b5184256dddd8dc26"
+const key = "<key>"
+const secret = "<secret>"
 
 func TestToken(t *testing.T) {
 	tokbox := New(key, secret)
