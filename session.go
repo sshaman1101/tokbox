@@ -28,38 +28,36 @@ type Session struct {
 func (s *Session) Token(role Role, connectionData string, expiration int64) (string, error) {
 	now := time.Now().UTC().Unix()
 
-	toHMAC := url.Values{}
-	toHMAC.Add("session_id", s.SessionID)
-	toHMAC.Add("create_time", fmt.Sprintf("%d", now))
+	dataStr := ""
+	dataStr += "session_id=" + url.QueryEscape(s.SessionID)
+	dataStr += "&create_time=" + url.QueryEscape(fmt.Sprintf("%d", now))
 	if expiration > 0 {
-		toHMAC.Add("expire_time", fmt.Sprintf("%d", now+expiration))
+		dataStr += "&expire_time=" + url.QueryEscape(fmt.Sprintf("%d", now+expiration))
 	}
 	if len(role) > 0 {
-		toHMAC.Add("role", string(role))
+		dataStr += "&role=" + url.QueryEscape(string(role))
 	}
 	if len(connectionData) > 0 {
-		toHMAC.Add("connection_data", connectionData)
+		dataStr += "&connection_data=" + url.QueryEscape(connectionData)
 	}
-	toHMAC.Add("nonce", fmt.Sprintf("%d", rand.Intn(999999)))
+	dataStr += "&nonce=" + url.QueryEscape(fmt.Sprintf("%d", rand.Intn(999999)))
 
-	encoded := toHMAC.Encode()
 	h := hmac.New(sha1.New, []byte(s.api.secret))
-	n, err := h.Write([]byte(encoded))
+	n, err := h.Write([]byte(dataStr))
 	if err != nil {
 		return "", err
 	}
-
-	if n != len(encoded) {
-		return "", fmt.Errorf("hmac: not enough bytes written, expected %d, got %d", n, len(encoded))
+	if n != len(dataStr) {
+		return "", fmt.Errorf("hmac not enough bytes written %d != %d", n, len(dataStr))
 	}
 
-	values := url.Values{}
-	values.Add("partner_id", s.api.key)
-	values.Add("sig", fmt.Sprintf("%x:%s", h.Sum(nil), encoded))
+	preCoded := ""
+	preCoded += "partner_id=" + s.api.key
+	preCoded += "&sig=" + fmt.Sprintf("%x:%s", h.Sum(nil), dataStr)
 
 	var buf bytes.Buffer
 	encoder := base64.NewEncoder(base64.StdEncoding, &buf)
-	encoder.Write([]byte(values.Encode()))
+	encoder.Write([]byte(preCoded))
 	encoder.Close()
 	return fmt.Sprintf("T1==%s", buf.String()), nil
 }
