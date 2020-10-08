@@ -125,6 +125,7 @@ func (s *Session) StartArchive(name string) (*ArchiveMetadata, error) {
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Add("content-type", "application/json")
 
 	resp, err := s.api.client.Do(req)
 	if err != nil {
