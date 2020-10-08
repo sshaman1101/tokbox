@@ -133,15 +133,15 @@ func (s *Session) StartArchive(name string) (*ArchiveMetadata, error) {
 		return nil, fmt.Errorf("failed to perform http request: %w", err)
 	}
 
-	bs, _ = ioutil.ReadAll(resp.Body)
+	respBody, _ := ioutil.ReadAll(resp.Body)
 	_ = resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("request failed with non-200 code: %d: %s", resp.StatusCode, string(bs))
+		return nil, fmt.Errorf("request failed with non-200 code: %d: %s", resp.StatusCode, string(respBody))
 	}
 
 	meta := ArchiveMetadata{}
-	if err := json.Unmarshal(bs, &meta); err != nil {
+	if err := json.Unmarshal(respBody, &meta); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 
