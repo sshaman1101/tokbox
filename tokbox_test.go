@@ -3,7 +3,8 @@ package tokbox
 // Adapted from https://github.com/cioc/tokbox
 
 import (
-	"log"
+	"encoding/json"
+	"fmt"
 	"testing"
 )
 
@@ -14,14 +15,26 @@ func TestToken(t *testing.T) {
 	tokbox := New(key, secret)
 	session, err := tokbox.NewSession("", P2P)
 	if err != nil {
-		log.Fatal(err)
+		t.Logf("failed to issue new session: %v", err)
 		t.FailNow()
 	}
-	log.Println(session)
+
+	fmt.Println("sessid: ", session.SessionID)
+
 	token, err := session.Token(Publisher, "", Hours24)
 	if err != nil {
-		log.Fatal(err)
+		t.Logf("failed to obtain token: %v", err)
 		t.FailNow()
 	}
-	log.Println(token)
+
+	fmt.Println("token :: ", token)
+
+	list, err := session.ArchiveList()
+	if err != nil {
+		t.Logf("failed to get list: %v", err)
+		t.FailNow()
+	}
+
+	bs, _ := json.MarshalIndent(list, "", "  ")
+	fmt.Printf(string(bs))
 }

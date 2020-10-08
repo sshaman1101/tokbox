@@ -74,25 +74,31 @@ type startArchiveRequest struct {
 	Resolution string            `json:"resolution"` // "1280x720" | "640x480"
 }
 
-type StartArchiveResponse struct {
-	ID         string `json:"id"`
-	Name       string `json:"name"`
-	CreatedAt  int64  `json:"createdAt"`
-	Duration   int    `json:"duration"`
-	Event      string `json:"event"`
-	HasAudio   bool   `json:"hasAudio"`
-	HasVideo   bool   `json:"hasVideo"`
-	OutputMode string `json:"outputMode"`
-	PartnerID  int    `json:"partnerId"`
-	Password   string `json:"password"`
-	ProjectID  int    `json:"projectId"`
-	Reason     string `json:"reason"`
-	Resolution string `json:"resolution"`
-	SessionID  string `json:"sessionId"`
-	Sha256Sum  string `json:"sha256sum"`
-	Size       int    `json:"size"`
-	Status     string `json:"status"`
-	UpdatedAt  int64  `json:"updatedAt"`
+type ArchiveList struct {
+	Count int64             `json:"count"`
+	Items []ArchiveMetadata `json:"items"`
+}
+
+type ArchiveMetadata struct {
+	ID         string  `json:"id"`
+	Name       string  `json:"name"`
+	CreatedAt  int64   `json:"createdAt"`
+	Duration   int64   `json:"duration"`
+	Event      string  `json:"event"`
+	HasAudio   bool    `json:"hasAudio"`
+	HasVideo   bool    `json:"hasVideo"`
+	OutputMode string  `json:"outputMode"`
+	PartnerID  int64   `json:"partnerId"`
+	Password   string  `json:"password"`
+	ProjectID  int64   `json:"projectId"`
+	Reason     string  `json:"reason"`
+	Resolution string  `json:"resolution"`
+	SessionID  string  `json:"sessionId"`
+	Sha256Sum  string  `json:"sha256sum"`
+	Size       int64   `json:"size"`
+	Status     string  `json:"status"`
+	UpdatedAt  int64   `json:"updatedAt"`
+	URL        *string `json:"url"`
 }
 
 func newStartArchiveRequest(sid, name string) startArchiveRequest {
@@ -109,7 +115,7 @@ func newStartArchiveRequest(sid, name string) startArchiveRequest {
 	}
 }
 
-func (s *Session) StartArchive(name string) (*StartArchiveResponse, error) {
+func (s *Session) StartArchive(name string) (*ArchiveMetadata, error) {
 	reqBody := newStartArchiveRequest(s.SessionID, name)
 	bs, err := json.Marshal(reqBody)
 	if err != nil {
@@ -134,12 +140,12 @@ func (s *Session) StartArchive(name string) (*StartArchiveResponse, error) {
 		return nil, fmt.Errorf("request failed with non-200 code: %d: %s", resp.StatusCode, string(bs))
 	}
 
-	sar := StartArchiveResponse{}
-	if err := json.Unmarshal(bs, &sar); err != nil {
+	meta := ArchiveMetadata{}
+	if err := json.Unmarshal(bs, &meta); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 
-	return &sar, nil
+	return &meta, nil
 }
 
 func (s *Session) StopArchive(id string) error {
@@ -162,4 +168,31 @@ func (s *Session) StopArchive(id string) error {
 	}
 
 	return nil
+}
+
+func (s *Session) ArchiveList() (*ArchiveList, error) {
+	target := fmt.Sprintf("https://api.opentok.com/v2/project/%s/archive", s.api.key)
+	req, err := s.api.newRequest(http.MethodGet, target, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := s.api.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to perform http request: %w", err)
+	}
+
+	bs, _ := ioutil.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("request failed with non-200 code: %d: %s", resp.StatusCode, string(bs))
+	}
+
+	list := &ArchiveList{}
+	if err := json.Unmarshal(bs, list); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal list: %w", err)
+	}
+
+	return list, nil
 }

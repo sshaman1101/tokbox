@@ -4,10 +4,10 @@ package tokbox
 // see https://tokbox.com/developer/guides/archiving/ for more details.
 type ArchiveStatusChanges struct {
 	ID         string `json:"id"`
+	Name       string `json:"name"`
 	Event      string `json:"event"`
 	CreatedAt  int64  `json:"createdAt"`
 	Duration   int64  `json:"duration"`
-	Name       string `json:"name"`
 	PartnerID  int64  `json:"partnerId"`
 	Reason     string `json:"reason"`
 	Resolution string `json:"resolution"`
